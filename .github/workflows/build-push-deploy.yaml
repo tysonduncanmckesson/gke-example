@@ -67,12 +67,22 @@ jobs:
           mkdir -p descriptors/
           cp -pr devops/env/* devops/deploy/k8s/
           kustomize build devops/deploy/k8s/overlays/${ENV} -o descriptors/${ENV}.yaml
+          cp descriptors/${ENV}.yaml manifest-${ENV}.yml
+
+#          cat descriptors/${ENV}.yaml | kubectl apply -f -
 #          kubectl rollout status deployment/$DEPLOYMENT_NAME
 #          kubectl get services -o wide
 
+#      - name: Deploy
+#        run: |-
+#          kubectl \
+#           --token="$KUBERNETES_SERVICE_ACCOUNT" \
+#           --certificate-authority=$CLUSTER_CERT \
+#           --server=$CLUSTER_API \
+#           apply -f descriptors/${ENV}.yaml
 
-      - uses: actions-hub/kubectl@master
-        env:
-          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
-        with:
-          args: apply -f descriptors/${ENV}.yaml
+#      - uses: actions-hub/kubectl@master
+#        env:
+#          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+#        with:
+#          args: apply -f descriptors/${ENV}.yaml

@@ -2,14 +2,14 @@
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: gke-example
+  name: gke-example-ui
 spec:
   tls:
     - hosts:
         - gke-example.dev.cs.west.us.mckesson.com
   rules:
     - host: dev-connect.mckesson.com
-      path: /gke-example
+      path: /gke-example-ui
       http:
         paths:
           - backend:
