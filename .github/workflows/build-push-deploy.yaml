@@ -65,20 +65,13 @@ jobs:
           kustomize edit set image $DOCKER_IMAGE_NAME:${{ steps.version-tag.outputs.TAG }}
           popd
           mkdir -p descriptors/
+          cp -pr devops/env/* devops/deploy/k8s/
           kustomize build devops/deploy/k8s/overlays/${ENV} -o descriptors/${ENV}.yaml
           cat descriptors/${ENV}.yaml
 
       - name: Deploy
         uses: actions-hub/kubectl@master
         env:
-          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+          KUBE_CONFIG: ${{ secrets.K8SCONFIG }}
         with:
-          args: get pods
-
-#       Deploy the Docker image to the GKE cluster
-#      - name: Deploy
-#        run: |-
-#          ./kustomize edit set image gcr.io/PROJECT_ID/IMAGE:TAG=gcr.io/$PROJECT_ID/$IMAGE:$GITHUB_SHA
-#          ./kustomize build . | kubectl apply -f -
-#          kubectl rollout status deployment/$DEPLOYMENT_NAME
-#          kubectl get services -o wide
+          args: apply -f descriptors/${ENV}.yaml

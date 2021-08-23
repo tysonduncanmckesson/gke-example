@@ -1,10 +1,9 @@
----
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - deploy.yaml
-  - service.yaml
-  - ingress.yaml
+- deploy.yaml
+- service.yaml
+- ingress.yaml
 
 images:
   - name: mck-b2b-connect-docker.jfrog.io/b2b-connect/gke-example
@@ -17,11 +16,11 @@ generatorOptions:
   disableNameSuffixHash: true
 
 configMapGenerator:
-  - name: gke-example-configmap-common
-    envs:
-      - configmap.properties
+- envs:
+  - configmap.properties
+  name: gke-example-configmap-common
 
 secretGenerator:
-  - name: gke-example-secret-common
-    envs:
-      - secret.properties
+- envs:
+  - secret.properties
+  name: gke-example-secret-common
