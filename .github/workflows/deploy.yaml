@@ -12,8 +12,7 @@ on:
         default: 'latest'
 
 env:
-  # TODO: Change to name of your Docker Registry (eg. mck-team-name.jfrog.io)
-  DOCKER_REGISTRY: "mck-b2b-connect-docker.jfrog.io/b2b-connect/"
+  DOCKER_REGISTRY: "mck-b2b-connect-docker.jfrog.io/b2b-connect/gke-example"
   IMAGE_TAG: "${{ github.event.inputs.image-tag }}"
   ENV: "${{ github.event.inputs.deploy-environment }}"
 
