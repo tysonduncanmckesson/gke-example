@@ -60,8 +60,7 @@ jobs:
       # Configure
       - name: Configure
         run: |-
-          pushd devops
-          pushd deploy/k8s/base
+          pushd devops/deploy/k8s/base
           kustomize edit set image $DOCKER_IMAGE_NAME:${{ steps.version-tag.outputs.TAG }}
           popd
           mkdir -p descriptors/
