@@ -13,8 +13,6 @@ env:
 jobs:
   build-push-deploy:
     runs-on: ubuntu-latest
-      - uses: actions/checkout@v2
-
     steps:
       - uses: actions/checkout@v2
       - name: Set up JDK 11
