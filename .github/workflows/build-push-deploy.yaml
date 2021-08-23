@@ -67,7 +67,6 @@ jobs:
           mkdir -p descriptors/
           kustomize build devops/deploy/k8s/overlays/${ENV} -o descriptors/${ENV}.yaml
           cat descriptors/${ENV}.yaml
-          popd
 
       - name: Deploy
         uses: actions-hub/kubectl@master
