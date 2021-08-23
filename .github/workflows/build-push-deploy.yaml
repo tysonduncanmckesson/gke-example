@@ -40,8 +40,29 @@ jobs:
         id: version-tag
         run: echo "::set-output name=TAG::$(git describe --always)"
 
-
       - name: Push docker image
         run: |
           docker tag $DOCKER_IMAGE_NAME:latest $DOCKER_IMAGE_NAME:${{ steps.version-tag.outputs.TAG }}
           docker push -a $DOCKER_IMAGE_NAME
+
+      - name: Set up Kustomize
+        run: |-
+          curl --location https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv4.2.0/kustomize_v4.2.0_linux_amd64.tar.gz | tar xz
+          chmod u+x ./kustomize
+          mv kustomize /usr/bin
+
+      # Configure
+      - name: Configure
+        run: |-
+          cd devops/deploy/k8s
+          pushd base
+          kustomize edit set image mck-b2b-connect-docker.jfrog.io/b2b-connect/PROJECT_ID/IMAGE:TAG=mck-b2b-connect-docker.jfrog.io/b2b-connect/$PROJECT_ID/$IMAGE:$GITHUB_SHA
+          popd
+
+#       Deploy the Docker image to the GKE cluster
+#      - name: Deploy
+#        run: |-
+#          ./kustomize edit set image gcr.io/PROJECT_ID/IMAGE:TAG=gcr.io/$PROJECT_ID/$IMAGE:$GITHUB_SHA
+#          ./kustomize build . | kubectl apply -f -
+#          kubectl rollout status deployment/$DEPLOYMENT_NAME
+#          kubectl get services -o wide

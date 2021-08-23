@@ -1,0 +1,46 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: gke-example
+    release: gke-example
+  name: gke-example
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: gke-example
+      release: gke-example
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: gke-example
+        release: gke-example
+    spec:
+      containers:
+        - name: gke-example
+          image: mck-b2b-connect-docker.jfrog.io/b2b-connect/PROJECT_ID/IMAGE:TAG
+          envFrom:
+            - secretRef:
+                name: gke-example-secret-common
+            - secretRef:
+                name: gke-example-secret
+            - configMapRef:
+                name: gke-example-configmap-common
+            - configMapRef:
+                name: gke-example-configmap
+          imagePullPolicy: Always
+          resources:
+            limits:
+              memory: 500Mi
+            requests:
+              cpu: 100m
+              memory: 500Mi
+      restartPolicy: Always

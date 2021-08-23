@@ -1,0 +1,214 @@
+---
+###### DO NOT CHANGE BELOW THIS LINE ######
+common-params: &common-params
+  GIT_REPO: ((common.git_repo))
+  GIT_REPO_BRANCH: ((common.git_repo_branch))
+  GIT_REPO_KEY: ((common.git_repo_key))
+
+  GIT_PIPELINE_REPO: ((common.git_pipeline_repo))
+  GIT_PIPELINE_BRANCH: ((common.git_pipeline_branch))
+  GIT_PIPELINE_KEY: ((common.git_pipeline_key))
+
+  GIT_SECRETS_REPO: ((common.git_secrets_repo))
+  GIT_SECRETS_BRANCH: ((common.git_secrets_branch))
+  GIT_SECRETS_KEY: ((common.git_secrets_key))
+
+  DOCKER_REPO_URL: ((common.docker_repo_url))
+  DOCKER_IMAGE_TAG: ((common.docker_image_tag))
+
+  REGISTRY_USER: ((common.registry_user))
+  REGISTRY_PASS: ((common.registry_pass))
+
+  ARTIFACTORY_USERNAME: ((common.artifactory_username))
+  ARTIFACTORY_PASSWORD: ((common.artifactory_password))
+
+  NON_PROD_DEPLOY_PATTERN: ((common.non_prod_deploy_pattern))
+  PROD_DEPLOY_PATTERN: ((common.prod_deploy_pattern))
+
+deploy-params: &deploy-params
+  DEPLOY_NAME: ((PROJECT_NAME))
+  DEPLOY_TYPE: ((deploy.deploy_type))
+
+dev-deploy-params: &dev-deploy-params
+  <<: *deploy-params
+  K8S_NAMESPACE: ((dev_deploy.k8s_namespace))
+  K8S_CONFIG: ((dev_deploy.k8s_config))
+
+prod-deploy-params: &prod-deploy-params
+  <<: *deploy-params
+  K8S_NAMESPACE: ((prod_deploy.k8s_namespace))
+  K8S_CONFIG: ((prod_deploy.k8s_config))
+
+artifactory-params: &artifactory-params
+  BUILD_ARG_ORG_GRADLE_PROJECT_artifactoryPassword: ((common.artifactory_password))
+  BUILD_ARG_ORG_GRADLE_PROJECT_artifactoryUsername: ((common.artifactory_username))
+###### DO NOT CHANGE ABOVE THIS LINE ######
+
+resource_types:
+  - name: git-multibranch
+    type: docker-image
+    source:
+      repository: mck-b2b-connect-docker.jfrog.io/b2b-connect/mck-git-multibranch-resource
+
+  - name: mc-git
+    type: docker-image
+    source:
+      repository: mck-b2b-connect-docker.jfrog.io/b2b-connect/mc-git-resource
+      tag: latest
+
+  - name: kubernetes
+    type: docker-image
+    source:
+      repository: mck-b2b-connect-docker.jfrog.io/b2b-connect/kubernetes-resource
+      tag: latest
+
+  - name: keyval
+    type: docker-image
+    source:
+      repository: swce/keyval-resource
+
+resources:
+  # Main repo
+  - name: repo
+    type: git-multibranch
+    source:
+      uri: ((common.git_repo))
+      branches: ((common.git_repo_branch))
+      private_key: ((common.git_repo_key))
+    check_every: 1m
+
+  # Pipeline repo
+  - name: pipeline
+    type: mc-git
+    source:
+      uri: ((common.git_pipeline_repo))
+      branch: ((common.git_pipeline_branch))
+      private_key: ((common.git_pipeline_key))
+
+  - name: keyval
+    type: keyval
+
+  - name: secrets
+    type: mc-git
+    source:
+      uri: ((common.git_secrets_repo))
+      branch: ((common.git_secrets_branch))
+      private_key: ((common.git_secrets_key))
+
+  - name: docker-image
+    type: registry-image
+    source:
+      repository: ((common.docker_repo_url))
+      tag: ((common.docker_image_tag))
+      username: ((common.registry_user))
+      password: ((common.registry_pass))
+
+  - name: k8s-dev
+    type: kubernetes
+    source:
+      namespace: ((dev_deploy.k8s_namespace))
+      kubeconfig: ((dev_deploy.k8s_config))
+
+  - name: k8s-prod
+    type: kubernetes
+    source:
+      namespace: ((prod_deploy.k8s_namespace))
+      kubeconfig: ((prod_deploy.k8s_config))
+
+jobs:
+  - name: version
+    plan:
+      - in_parallel:
+          steps:
+            - get: repo
+              trigger: true
+            - get: pipeline
+      - task: generate-version
+        file: pipeline/src/main/tasks/generate-version/task.yaml
+        params:
+          <<: *common-params
+      - put: keyval
+        params:
+          file: keyvalout/keyval.properties
+
+  - name: build-and-push
+    serial: true
+    plan:
+      - in_parallel:
+          steps:
+            - get: keyval
+              trigger: true
+              passed:
+                - version
+            - get: repo
+              passed:
+                - version
+            - get: pipeline
+      - task: build-docker-image
+        privileged: true
+        file: pipeline/src/main/tasks/build-docker/task.yaml
+      - put: docker-image
+        params:
+          additional_tags: repo/.git/describe_ref
+          image: image/image.tar
+
+  - name: dev-deploy
+    plan:
+      - in_parallel:
+          steps:
+            - get: keyval
+              passed:
+                - build-and-push
+              trigger: true
+            - get: repo
+              passed:
+                - build-and-push
+            - get: pipeline
+            - get: secrets
+              trigger: true
+      - task: configure
+        file: pipeline/src/main/tasks/configure/task.yaml
+        params:
+          ENV: dev
+          SECRETS_DIR: "((PROJECT_NAME))/devops/env"
+          <<: *common-params
+          <<: *dev-deploy-params
+      - put: k8s-dev
+        params:
+          ENV: dev
+          kubectl: apply -f descriptors/dev.yaml
+          wait_until_ready_selector: app=kafka-admin-cli-host
+          wait_until_ready: 120
+      - put: keyval
+        params:
+          file: keyvalout/keyval.properties
+
+  - name: prod-deploy
+    plan:
+      - in_parallel:
+          steps:
+            - get: keyval
+              passed:
+                - dev-deploy
+              trigger: true
+            - get: repo
+              passed:
+                - dev-deploy
+            - get: pipeline
+            - get: secrets
+      - task: configure
+        file: pipeline/src/main/tasks/configure/task.yaml
+        params:
+          ENV: prod
+          SECRETS_DIR: "((PROJECT_NAME))/devops/env"
+          <<: *common-params
+          <<: *prod-deploy-params
+      - put: k8s-prod
+        params:
+          ENV: prod
+          kubectl: apply -f descriptors/prod.yaml
+          wait_until_ready_selector: app=kafka-admin-cli-host
+          wait_until_ready: 120
+      - put: keyval
+        params:
+          file: keyvalout/keyval.properties

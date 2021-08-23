@@ -1,0 +1,31 @@
+---
+PROJECT_NAME:  gke-example
+common:
+  artifactory_password: ((artifactory-service-account-password))
+  artifactory_username: da7769z
+  docker_image_tag: latest
+  docker_repo_url: mck-b2b-connect-docker.jfrog.io/b2b-connect/gke-example
+
+    mck-b2b-connect-docker.jfrog.io/b2b-connect/
+  git_pipeline_branch: master
+  git_pipeline_key: ((repo-private-key.private_key))
+  git_pipeline_repo: ssh://git@bitbucket.mckesson.com:7999/ecns/pipeline.git
+  git_repo: ssh://git@bitbucket.mckesson.com:7999/ecns/gke-example.git
+  git_repo_branch: (master|pr/[0-9]*|[0-9]*\.[0-9]*\.[0-9]*)
+  git_repo_key: ((repo-private-key.private_key))
+  git_secrets_branch: master
+  git_secrets_key: ((repo-private-key.private_key))
+  git_secrets_repo: ssh://git@bitbucket.mckesson.com:7999/ecns/kafka-admin-secrets.git
+  registry_pass: ((registry-password))
+  registry_user: apdregistry
+  non_prod_deploy_pattern: ^pr/[0-9]*$
+  prod_deploy_pattern: ^[0-9]*\.[0-9]*\.[0-9]*$
+deploy:
+  deploy_type: k8s
+
+dev_deploy:
+  k8s_namespace: mck-tech-adp-dev
+  k8s_config: ((k8s-config))
+prod_deploy:
+  k8s_namespace: mck-tech-adp-prod
+  k8s_config: ((k8s-config-prod))

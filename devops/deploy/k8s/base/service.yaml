@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: gke-example
+    release: gke-example
+  name: gke-example
+spec:
+  ports:
+    - name: gke-example
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app: gke-example
+    release: gke-example
+  sessionAffinity: None
+  type: ClusterIP

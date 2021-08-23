@@ -1,0 +1,16 @@
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: gke-example
+spec:
+  tls:
+    - hosts:
+        - gke-example.cs.west.us.mckesson.com
+  rules:
+    - host: gke-example.cs.west.us.mckesson.com
+      http:
+        paths:
+          - backend:
+              serviceName: gke-example
+              servicePort: 8080

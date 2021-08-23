@@ -1,0 +1,9 @@
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: gke-example
+  annotations:
+    kubernetes.io/ingress.class: "nginx-internal"
+  labels:
+    app: gke-example
