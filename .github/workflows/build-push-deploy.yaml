@@ -34,7 +34,7 @@ jobs:
           registry: mck-b2b-connect-docker.jfrog.io
 
       - name: Docker Build
-          run: ./gradlew bootBuildImage --imageName=${{ env.DOCKER_IMAGE_NAME }}:latest
+        run: ./gradlew bootBuildImage --imageName=${{ env.DOCKER_IMAGE_NAME }}:latest
 
       - name: Version Tag
         id: version-tag
