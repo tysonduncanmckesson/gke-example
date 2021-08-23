@@ -66,6 +66,6 @@ jobs:
           popd
           mkdir -p descriptors/
           cp -pr devops/env/* devops/deploy/k8s/
-          kustomize build devops/deploy/k8s/overlays/${ENV} -o descriptors/${ENV}.yaml | kubectl apply -f -
+          kustomize build devops/deploy/k8s/overlays/${ENV} | kubectl apply -f -
           kubectl rollout status deployment/$DEPLOYMENT_NAME
           kubectl get services -o wide
