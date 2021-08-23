@@ -9,6 +9,7 @@ on:
 env:
   DOCKER_IMAGE_NAME: mck-b2b-connect-docker.jfrog.io/b2b-connect/${{ github.event.repository.name }}
   ARTIFACTORY_API_KEY: '${{ secrets.JFROG_API_KEY }}'
+  ENV: 'dev'
 
 jobs:
   build-push-deploy:
@@ -50,13 +51,6 @@ jobs:
           docker tag $DOCKER_IMAGE_NAME:latest $DOCKER_IMAGE_NAME:${{ steps.version-tag.outputs.TAG }}
           docker push -a $DOCKER_IMAGE_NAME
 
-      - name: Set up Kubectl
-        run: |-
-          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-          chmod u+x ./kubectl
-          mv kubectl $HOME/.local/bin
-          kubectl version
-
       - name: Set up Kustomize
         run: |-
           curl --location https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv4.2.0/kustomize_v4.2.0_linux_amd64.tar.gz | tar xz
@@ -66,11 +60,20 @@ jobs:
       # Configure
       - name: Configure
         run: |-
-          cd devops/deploy/k8s
-          pushd base
+          pushd devops/deploy/k8s/base
           kustomize edit set image $DOCKER_IMAGE_NAME:TAG=$DOCKER_IMAGE_NAME:${{ steps.version-tag.outputs.TAG }}
-          cat deploy.yaml
+          ./kustomize build .
           popd
+          mkdir -p descriptors/
+          kustomize build devops/deploy/k8s/overlays/${ENV} -o descriptors/${ENV}.yaml
+          cat descriptors/${ENV}.yaml
+
+      - name: Deploy
+        uses: actions-hub/kubectl@master
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+        with:
+          args: get pods
 
 #       Deploy the Docker image to the GKE cluster
 #      - name: Deploy
