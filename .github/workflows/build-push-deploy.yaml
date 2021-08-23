@@ -50,6 +50,13 @@ jobs:
           docker tag $DOCKER_IMAGE_NAME:latest $DOCKER_IMAGE_NAME:${{ steps.version-tag.outputs.TAG }}
           docker push -a $DOCKER_IMAGE_NAME
 
+      - name: Set up Kubectl
+        run: |-
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod u+x ./kubectl
+          mv kubectl $HOME/.local/bin
+          kubectl version
+
       - name: Set up Kustomize
         run: |-
           curl --location https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv4.2.0/kustomize_v4.2.0_linux_amd64.tar.gz | tar xz
