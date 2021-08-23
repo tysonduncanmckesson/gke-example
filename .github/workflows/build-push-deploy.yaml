@@ -62,7 +62,7 @@ jobs:
         run: |-
           pushd devops
           pushd deploy/k8s/base
-          kustomize edit set image $DOCKER_IMAGE_NAME:TAG=$DOCKER_IMAGE_NAME:${{ steps.version-tag.outputs.TAG }}
+          kustomize edit set image $DOCKER_IMAGE_NAME:${{ steps.version-tag.outputs.TAG }}
           popd
           mkdir -p descriptors/
           kustomize build devops/deploy/k8s/overlays/${ENV} -o descriptors/${ENV}.yaml
