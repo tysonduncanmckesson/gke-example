@@ -68,7 +68,7 @@ jobs:
         run: |-
           cd devops/deploy/k8s
           pushd base
-          kustomize edit set image mck-b2b-connect-docker.jfrog.io/b2b-connect/PROJECT_ID/IMAGE:TAG=$DOCKER_IMAGE_NAME:${{ steps.version-tag.outputs.TAG }}
+          kustomize edit set image $DOCKER_IMAGE_NAME:TAG=$DOCKER_IMAGE_NAME:${{ steps.version-tag.outputs.TAG }}
           cat deploy.yaml
           popd
 

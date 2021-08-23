@@ -26,7 +26,7 @@ spec:
     spec:
       containers:
         - name: gke-example
-          image: mck-b2b-connect-docker.jfrog.io/b2b-connect/PROJECT_ID/IMAGE:TAG
+          image: mck-b2b-connect-docker.jfrog.io/b2b-connect/gke-example:TAG
           envFrom:
             - secretRef:
                 name: gke-example-secret-common
